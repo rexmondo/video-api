@@ -1,6 +1,7 @@
 {
 	"recommendations": [
 		"esbenp.prettier-vscode",
-		"ms-vscode-remote.remote-containers"
+		"ms-vscode-remote.remote-containers",
+		"ms-azuretools.vscode-docker"
 	],
 }

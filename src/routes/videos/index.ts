@@ -1,5 +1,9 @@
 import { Handler } from 'express'
 import { v4 as uuidv4 } from 'uuid'
+import ffmpeg from 'fluent-ffmpeg'
+import * as os from 'node:os'
+import multer from 'multer'
+
 import supabase from '../../lib/supabase'
 
 /**
@@ -53,11 +57,17 @@ import supabase from '../../lib/supabase'
  *                   type: string
  *                   format: uuid
  */
-export const post: Handler = (request, response) => {
-	const id = uuidv4()
-	// convert video
+const tmpDir = os.tmpdir()
+export const post: Handler[] = [
+	// parse multipart/form-data into a file field in the request
+	multer({ dest: tmpDir }).single('video'),
+	(request, response) => {
+		const id = uuidv4()
+		// convert saved file
+		console.log(process.env, request.file)
 
-	// upload video
-	// return id
-	return response.json({ id: uuidv4() })
-}
+		// send saved file to supabase
+		// return id
+		return response.json({ id })
+	}
+]
