@@ -1,5 +1,6 @@
 import { Handler } from 'express'
 import { v4 as uuidv4 } from 'uuid'
+import supabase from '../../lib/supabase'
 
 /**
  * @openapi
@@ -13,7 +14,7 @@ import { v4 as uuidv4 } from 'uuid'
  *            schema:
  *              type: object
  *              properties:
- *                file:
+ *                video:
  *                  type: string
  *                  format: binary
  *     responses:
@@ -52,6 +53,11 @@ import { v4 as uuidv4 } from 'uuid'
  *                   type: string
  *                   format: uuid
  */
-export const post: Handler = (_, response) => {
+export const post: Handler = (request, response) => {
+	const id = uuidv4()
+	// convert video
+
+	// upload video
+	// return id
 	return response.json({ id: uuidv4() })
 }

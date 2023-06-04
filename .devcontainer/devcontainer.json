@@ -1,0 +1,44 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
+// https://github.com/microsoft/vscode-dev-containers/tree/v0.187.0/containers/typescript-node
+{
+	"name": "Video API",
+	"build": {
+		"dockerfile": "../Dockerfile",
+		// Update 'VARIANT' to pick a Node version: 14, 16, 18
+		"args": {
+			"VARIANT": "18"
+		}
+	},
+
+	// Set *default* container specific settings.json values on container create.
+	"customizations": {
+		"containerEnv": {
+			"NODE_ENV": "development"
+		},
+		"vscode": {
+			"settings": {
+				"telemetry.enableTelemetry": false,
+				"redhat.telemetry.enabled": false,
+				"vulnCost.sendStatistics": false,
+
+				"editor.renderWhitespace": "all",
+				"editor.renderControlCharacters": true,
+				"editor.formatOnSave": true,
+
+				"files.insertFinalNewline": true
+			}
+		}
+	},
+
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	"forwardPorts": [4000],
+	"portsAttributes": {
+		"4000": { "label": "Video API" }
+	},
+
+	"postCreateCommand": "pnpm install",
+
+	// Comment out connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
+	"remoteUser": "node",
+	"runArgs": ["--env-file", ".env"]
+}
