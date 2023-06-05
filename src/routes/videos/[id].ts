@@ -2,12 +2,8 @@ import { Handler } from 'express'
 import { validate } from 'uuid'
 import * as fs from 'node:fs/promises'
 import * as os from 'node:os'
-import {
-	checkVideoExists,
-	downloadVideo,
-	saveVideoLocally
-} from '../../lib/supabase'
-import { getMetadata } from '../../lib/ffmpeg'
+import { checkVideoExists, saveVideoLocally } from '../../lib/supabase'
+import { getMetadataJSON } from '../../lib/ffmpeg'
 
 /**
  * @openapi
@@ -33,6 +29,45 @@ import { getMetadata } from '../../lib/ffmpeg'
  */
 const tmpDir = os.tmpdir()
 
+const parseMetadata = (metadata: any) => {
+	const videoStream =
+		metadata.streams.find((stream: any) => stream.codec_type === 'video') ?? {}
+	const videoStreamHeaders = {
+		'Video-Codec': videoStream.codec_name,
+		'Video-Resolution': `${videoStream.width}x${videoStream.height}`,
+		'Video-Duration': videoStream.duration,
+		'Video-Bit-Rate': videoStream.bit_rate,
+		'Video-Frame-Rate': videoStream.r_frame_rate
+	}
+	const audioStream =
+		metadata.streams.find((stream: any) => stream.codec_type === 'audio') ?? {}
+	const audioStreamHeaders = {
+		'Audio-Codec': audioStream.codec_name,
+		'Audio-Channel-Count': audioStream.channels,
+		'Audio-Sample-Rate': audioStream.sample_rate,
+		'Audio-Bit-Rate': audioStream.bit_rate
+	}
+	const format = metadata.format ?? {}
+	const formatHeaders = {
+		'Video-Format': format.format_name,
+		'Content-Length': format.size,
+		'Bit-Rate': format.bit_rate
+	}
+
+	return {
+		...videoStreamHeaders,
+		...audioStreamHeaders,
+		...formatHeaders
+	}
+}
+
+const downloadAndGetMetadata = async (folder: string, id: string) => {
+	const path = await saveVideoLocally(folder, id)
+	const metadata = await getMetadataJSON(path)
+	const headers = parseMetadata(metadata)
+	return { headers, path }
+}
+
 export const head: Handler = async (request, response) => {
 	const { id } = request.params
 	if (!id) return response.status(400).json({ error: 'Missing video ID.' })
@@ -52,15 +87,24 @@ export const head: Handler = async (request, response) => {
 
 	try {
 		if (uploadedExists) {
-			const savePath = await saveVideoLocally('uploaded', id)
-			const metadata = await getMetadata(savePath)
-			console.log(savePath, metadata)
-			return response.set('boogie', 'woogie').send()
+			const { headers, path } = await downloadAndGetMetadata('uploaded', id)
+			for (const [key, value] of Object.entries(headers)) {
+				response.setHeader(key, value)
+			}
+			// non-awaited cleanup to keep the response snappy
+			fs.rm(path)
+			return response.send()
 		}
 
+		// doing merged as a separate branch in case we want to handle get/head
+		// differently than uploaded in the future.
 		if (mergedExists) {
-			const savePath = await saveVideoLocally('uploaded', id)
-			const output = await getMetadata(savePath)
+			const { headers, path } = await downloadAndGetMetadata('uploaded', id)
+			for (const [key, value] of Object.entries(headers)) {
+				response.setHeader(key, value)
+			}
+			// non-awaited cleanup to keep the response snappy
+			fs.rm(path)
 			return response.send()
 		}
 	} catch (error) {
@@ -120,7 +164,7 @@ export const head: Handler = async (request, response) => {
  */
 export const get: Handler = (request, response) => {
 	const { id } = request.params
-	if (!id) return response.status(400).json({ error: 'Malformed ID' })
+	if (!id) return response.status(400).json({ error: 'Missing ID' })
 	if (!validate(id)) return response.status(400).json({ error: 'Malformed ID' })
 	return response.json({ id })
 }
