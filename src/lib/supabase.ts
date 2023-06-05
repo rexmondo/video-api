@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import * as fs from 'node:fs'
 import * as os from 'node:os'
+import { Writable } from 'node:stream'
 
 if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
 	throw new Error(
@@ -41,9 +42,11 @@ export async function getVideoStream(folder: string, id: string) {
 export async function saveVideoLocally(folder: string, id: string) {
 	const path = `${os.tmpdir()}/${id}.mp4`
 	const response = await getVideoStream(folder, id)
-	const buffer = Buffer.from(await response.arrayBuffer())
-	console.log(path, buffer)
-	// await fs.promises.writeFile(path, Buffer.from(await response.arrayBuffer()))
+	if (!response.body) throw new Error(`No file response for path ${path}`)
+	// some gymnastics to convert the node stream to a web stream
+	// which is what the built in fetch does on node since v18
+	const fileWriteStream = Writable.toWeb(fs.createWriteStream(path))
+	await response.body.pipeTo(fileWriteStream)
 	return path
 }
 
