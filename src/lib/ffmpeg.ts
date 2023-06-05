@@ -2,21 +2,18 @@ import { promisify } from 'node:util'
 import { exec } from 'node:child_process'
 import * as fs from 'node:fs/promises'
 import * as os from 'node:os'
-import watermark from '../assets/watermark.png'
 
 const tmpDir = os.tmpdir()
 
 const execAsync = promisify(exec)
 
 export async function ffmpeg(input: string) {
-	const { stdout, stderr } = await execAsync(`ffmpeg ${input}`)
-	if (stderr) throw new Error(stderr)
+	const { stdout } = await execAsync(`ffmpeg ${input}`)
 	return stdout
 }
 
 export async function ffprobe(input: string) {
-	const { stdout, stderr } = await execAsync(`ffprobe ${input}`)
-	if (stderr) throw new Error(stderr)
+	const { stdout } = await execAsync(`ffprobe ${input}`)
 	return stdout
 }
 
@@ -60,7 +57,11 @@ export async function concatVideos(
 }
 
 export async function overlayVideo(inputPath: string, outputPath: string) {
-	return ffmpeg(
-		`-i ${inputPath} -i ../assets/watermark.png -filter_complex "[1][0]scale2ref=oh*mdar:ih*0.2[logo][video];[video][logo]overlay" ${outputPath}`
+	const watermarkPath = `${tmpDir}/watermark.png`
+	await fs.cp(`${__dirname}/../assets/watermark.png`, watermarkPath)
+	await ffmpeg(
+		`-i ${inputPath} -i ${watermarkPath} -filter_complex "[1][0]scale2ref=oh*mdar:ih*0.2[logo][video];[video][logo]overlay" ${outputPath}`
 	)
+	fs.rm(watermarkPath)
+	return
 }

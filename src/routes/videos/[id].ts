@@ -33,9 +33,11 @@ const parseMetadata = (metadata: any) => {
 	}
 
 	return {
-		...videoStreamHeaders,
-		...audioStreamHeaders,
-		...formatHeaders
+		...Object.fromEntries([
+			...Object.entries(videoStreamHeaders).filter(([_, v]) => Boolean(v)),
+			...Object.entries(audioStreamHeaders).filter(([_, v]) => Boolean(v)),
+			...Object.entries(formatHeaders).filter(([_, v]) => Boolean(v))
+		])
 	}
 }
 

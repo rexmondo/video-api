@@ -4,9 +4,9 @@
   "description": "An api for storing and transforming video files",
   "main": "dist/src/index.js",
   "scripts": {
-    "build": "pnpm tsc",
+    "build": "pnpm tsc && cp -R src/assets dist/src/assets",
     "start": "node .",
-    "dev": "pnpm concurrently \"pnpm tsc --watch\" \"nodemon dist/index.js\"",
+    "dev": "pnpm build && pnpm concurrently \"pnpm tsc --watch\" \"nodemon dist/index.js\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
