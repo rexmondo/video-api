@@ -20,9 +20,9 @@ ENV FFMPEG_CORE="bash \
     lame \
     fdk-aac \
     freetype \
-    libcrypto1.0 \
-    libssl1.0 \
-    jasper-libs \
+    libcrypto1.1 \
+    libssl1.1 \
+    jasper \
     libavc1394 \
     yasm"
 
@@ -85,7 +85,6 @@ RUN apk update && \
     --enable-gpl \
     --enable-postproc \
     --enable-nonfree \
-    --enable-avresample \
     --enable-libfdk-aac \
     --disable-debug \
     --enable-small \
@@ -112,7 +111,9 @@ WORKDIR /app
 COPY . .
 
 RUN npm i -g pnpm
-RUN pnpm install --production
+# TODO: in staged build, compile before the 
+# prod build and use pnpm install --production in prod container
+RUN pnpm install
 RUN pnpm build
 
 EXPOSE 4000
