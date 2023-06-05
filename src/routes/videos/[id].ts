@@ -75,22 +75,28 @@ export const head: Handler = async (request, response) => {
 		return response.status(400).json({ error: 'Malformed ID.' })
 	}
 
-	// search for the video
-	const [uploadedExists, mergedExists] = await Promise.all([
-		checkVideoExists('uploaded', id),
-		checkVideoExists('merged', id)
-	])
-
-	if (!uploadedExists && !mergedExists) {
-		return response.status(404).send()
-	}
-
 	try {
+		// search for the video
+		const [uploadedExists, mergedExists] = await Promise.all([
+			checkVideoExists('uploaded', id),
+			checkVideoExists('merged', id)
+		])
+
+		if (!uploadedExists && !mergedExists) {
+			return response.status(404).send()
+		}
+
 		if (uploadedExists) {
 			const { headers, path } = await downloadAndGetMetadata('uploaded', id)
 			for (const [key, value] of Object.entries(headers)) {
 				response.setHeader(key, value)
 			}
+			// set content type and disposition manually for head
+			response.setHeader('Content-Type', 'video/mp4')
+			response.setHeader(
+				'Content-Disposition',
+				`attachment; filename=${id}.mp4`
+			)
 			// non-awaited cleanup to keep the response snappy
 			fs.rm(path)
 			return response.send()
@@ -103,6 +109,12 @@ export const head: Handler = async (request, response) => {
 			for (const [key, value] of Object.entries(headers)) {
 				response.setHeader(key, value)
 			}
+			// set content type and disposition manually for head
+			response.setHeader('Content-Type', 'video/mp4')
+			response.setHeader(
+				'Content-Disposition',
+				`attachment; filename=${id}.mp4`
+			)
 			// non-awaited cleanup to keep the response snappy
 			fs.rm(path)
 			return response.send()
@@ -110,8 +122,6 @@ export const head: Handler = async (request, response) => {
 	} catch (error) {
 		return response.status(500)
 	}
-
-	return response.send()
 }
 
 /**
@@ -153,18 +163,50 @@ export const head: Handler = async (request, response) => {
  *       200:
  *         description: A video file
  *         content:
- *           application/json:
+ *           video/mp4:
  *             schema:
- *               type: object
- *               properties:
- *                 id:
- *                   description: The ID of the video
- *                   type: string
- *                   format: uuid
+ *                type: string
+ *                format: binary
  */
-export const get: Handler = (request, response) => {
+export const get: Handler = async (request, response) => {
 	const { id } = request.params
 	if (!id) return response.status(400).json({ error: 'Missing ID' })
 	if (!validate(id)) return response.status(400).json({ error: 'Malformed ID' })
-	return response.json({ id })
+
+	try {
+		// search for the video
+		const [uploadedExists, mergedExists] = await Promise.all([
+			checkVideoExists('uploaded', id),
+			checkVideoExists('merged', id)
+		])
+
+		if (!uploadedExists && !mergedExists) {
+			return response.status(404).json({ error: 'Video not found' })
+		}
+
+		if (uploadedExists) {
+			const { headers, path } = await downloadAndGetMetadata('uploaded', id)
+			for (const [key, value] of Object.entries(headers)) {
+				response.setHeader(key, value)
+			}
+			response.attachment(`${id}.mp4`)
+			return response.sendFile(path)
+		}
+
+		// again, keeping merged as a separate block here in case we want to
+		// change the behavior in the future.
+		if (mergedExists) {
+			const { headers, path } = await downloadAndGetMetadata('merged', id)
+			for (const [key, value] of Object.entries(headers)) {
+				response.setHeader(key, value)
+			}
+			response.attachment(`${id}.mp4`)
+			return response.sendFile(path)
+		}
+	} catch (error) {
+		console.error(error)
+		return response
+			.status(500)
+			.json({ error: 'Something went wrong fetching the video.' })
+	}
 }
