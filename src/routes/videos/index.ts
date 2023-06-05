@@ -1,11 +1,11 @@
 import { Handler } from 'express'
 import { v4 as uuidv4 } from 'uuid'
-import ffmpeg from 'fluent-ffmpeg'
 import * as os from 'node:os'
-import * as fs from 'node:fs'
+import * as fs from 'node:fs/promises'
 import multer from 'multer'
 
-import supabase from '../../lib/supabase'
+import { uploadVideo } from '../../lib/supabase'
+import { encodeStandard } from '../../lib/ffmpeg'
 
 /**
  * @openapi
@@ -78,24 +78,21 @@ export const post: Handler[] = [
 			})
 		}
 		// reject for invalid mimetypes
-		// if (!request.file.mimetype.includes('video/')) {
-		// 	return response.status(400).json({ error: 'Not a video file.' })
-		// }
+		if (!request.file.mimetype.includes('video/')) {
+			return response.status(400).json({ error: 'Not a video file.' })
+		}
 		try {
-			// await ffmpeg(request.file.path)
-			// 	.videoCodec('libx24')
-			// 	.format('mp4')
-			// 	.on('error', (err) => {
-			// 		throw new Error(err)
-			// 	})
-			// 	.save(savePath)
-			// 	.run()
-			await supabase.storage
-				.from('videos')
-				.upload(`uploaded/${id}`, fs.createReadStream(request.file.path), {
-					contentType: 'image/png',
-					duplex: 'half'
-				})
+			const inPath = request.file.path
+			const outPath = `${inPath}-converted.mp4`
+			await encodeStandard(inPath, outPath)
+			await uploadVideo(`uploaded/${id}.mp4`, outPath)
+
+			// delete the temporary files
+			// no await here because we don't want to block the response
+			fs.rm(inPath)
+			fs.rm(outPath)
+
+			// hooray happy path
 			return response.json({ id })
 		} catch (err: any) {
 			console.error(err)

@@ -1,5 +1,13 @@
 import { Handler } from 'express'
 import { validate } from 'uuid'
+import * as fs from 'node:fs/promises'
+import * as os from 'node:os'
+import {
+	checkVideoExists,
+	downloadVideo,
+	saveVideoLocally
+} from '../../lib/supabase'
+import { getMetadata } from '../../lib/ffmpeg'
 
 /**
  * @openapi
@@ -23,11 +31,43 @@ import { validate } from 'uuid'
  *       200:
  *         description: A video file
  */
-export const head: Handler = (request, response) => {
+const tmpDir = os.tmpdir()
+
+export const head: Handler = async (request, response) => {
 	const { id } = request.params
-	if (!id) return response.status(400).json({ error: 'Malformed ID' })
-	if (!validate(id)) return response.status(400).json({ error: 'Malformed ID' })
-	return response.json({ id })
+	if (!id) return response.status(400).json({ error: 'Missing video ID.' })
+	if (!validate(id)) {
+		return response.status(400).json({ error: 'Malformed ID.' })
+	}
+
+	// search for the video
+	const [uploadedExists, mergedExists] = await Promise.all([
+		checkVideoExists('uploaded', id),
+		checkVideoExists('merged', id)
+	])
+
+	if (!uploadedExists && !mergedExists) {
+		return response.status(404).send()
+	}
+
+	try {
+		if (uploadedExists) {
+			const savePath = await saveVideoLocally('uploaded', id)
+			const metadata = await getMetadata(savePath)
+			console.log(savePath, metadata)
+			return response.set('boogie', 'woogie').send()
+		}
+
+		if (mergedExists) {
+			const savePath = await saveVideoLocally('uploaded', id)
+			const output = await getMetadata(savePath)
+			return response.send()
+		}
+	} catch (error) {
+		return response.status(500)
+	}
+
+	return response.send()
 }
 
 /**
