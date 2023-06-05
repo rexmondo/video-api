@@ -171,6 +171,10 @@ export const get: Handler = async (request, response) => {
 		const uploadPath = `merged/${id}.mp4`
 		await uploadVideo(uploadPath, overlayPath)
 
+		// TODO: this is spammy, should figure out a way to wrap ffmpeg into
+		// streams, or use ffmpeg wasm
+		fs.rm(path1)
+		fs.rm(path2)
 		fs.rm(truncated1Path)
 		fs.rm(truncated2Path)
 		fs.rm(mergedPath)
