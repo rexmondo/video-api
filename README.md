@@ -53,11 +53,6 @@ video files into a single merged file.
 
 A [Dockerfile](./Dockerfile) has been provided to build the project into a container.
 Note that we have to build ffmpeg from source because we are using libfdk-aac.
-The docker command to run the build has been provided in the scripts tag.
-
-```sh
-$ pnpm build:docker
-```
 
 ### API Docs
 
@@ -89,3 +84,9 @@ container url and port to). These let you try out the live api if you want to te
   node.js core, and the version that was added aligns with the whatwg spec. This makes it mildly
   annoying to interact with the fs, which is written on the older node.js stream standard, but
   that is the cost of future-proofing.
+
+- **Testing**:
+
+  Endpoints were all developed using the swagger docs as a TDD mechanism. The swagger docs were
+  written before the handlers and the handlers were built by sending requests from the swagger UI.
+  In the future cypress of playwright should be added to make automated tests.

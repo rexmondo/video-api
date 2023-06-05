@@ -5,28 +5,6 @@ import * as os from 'node:os'
 import { checkVideoExists, saveVideoLocally } from '../../lib/supabase'
 import { getMetadataJSON } from '../../lib/ffmpeg'
 
-/**
- * @openapi
- * /videos/{id}:
- *   head:
- *     summary: Get video metadata
- *     description: Get the header metadata for a video
- *     parameters:
- *     - name: id
- *       description: The ID of the video to download
- *       in: path
- *       required: true
- *       schema:
- *         type: string
- *         format: uuid
- *     responses:
- *       400:
- *         description: Missing or malformed ID
- *       404:
- *         description: Video not found
- *       200:
- *         description: A video file
- */
 const tmpDir = os.tmpdir()
 
 const parseMetadata = (metadata: any) => {
@@ -68,6 +46,28 @@ const downloadAndGetMetadata = async (folder: string, id: string) => {
 	return { headers, path }
 }
 
+/**
+ * @openapi
+ * /videos/{id}:
+ *   head:
+ *     summary: Get video metadata
+ *     description: Get the header metadata for a video
+ *     parameters:
+ *     - name: id
+ *       description: The ID of the video to download
+ *       in: path
+ *       required: true
+ *       schema:
+ *         type: string
+ *         format: uuid
+ *     responses:
+ *       400:
+ *         description: Missing or malformed ID
+ *       404:
+ *         description: Video not found
+ *       200:
+ *         description: A video file
+ */
 export const head: Handler = async (request, response) => {
 	const { id } = request.params
 	if (!id) return response.status(400).json({ error: 'Missing video ID.' })
