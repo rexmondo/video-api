@@ -27,23 +27,23 @@ import supabase from '../../lib/supabase'
  *         content:
  *           application/json:
  *             schema:
- *             type: object
- *             properties:
- *               error:
- *                 description: The error message
- *                 type: string
- *                 example: Invalid video file
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   description: The error message
+ *                   type: string
+ *                   example: Invalid video file
  *       500:
  *         description: Error Uploading video
  *         content:
  *           application/json:
  *             schema:
- *             type: object
- *             properties:
- *               error:
- *                 description: The error message
- *                 type: string
- *                 example: Error occured uploading video
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   description: The error message
+ *                   type: string
+ *                   example: Error occured uploading video
  *
  *       200:
  *         description: An id for the video that was just uploaded
@@ -61,13 +61,49 @@ const tmpDir = os.tmpdir()
 export const post: Handler[] = [
 	// parse multipart/form-data into a file field in the request
 	multer({ dest: tmpDir }).single('video'),
-	(request, response) => {
-		const id = uuidv4()
-		// convert saved file
-		console.log(process.env, request.file)
+	async (request, response) => {
 
-		// send saved file to supabase
-		// return id
-		return response.json({ id })
+		console.log('got here', request.file)
+		// make an id for the file
+		const id = uuidv4()
+
+		// grab the filePath and mimetype
+		if (!request.file) {
+			return response
+				.status(400)
+				.json({ error: 'Missing video file in request.' })
+		}
+		if (request.file.fieldname !== 'video') {
+			return response.status(400).json({
+				error: "Malformed request. Video file field name must be 'video'."
+			})
+		}
+		// reject for invalid mimetypes
+		if (!request.file.mimetype.includes('video/')) {
+			return response.status(400).json({ error: 'Not a video file.' })
+		}
+		console.log(id)
+		return
+		try {
+			const savePath = `${request.file.path}-processed`
+			// await ffmpeg(request.file.path)
+			// 	.videoCodec('libx24')
+			// 	.format('mp4')
+			// 	.on('error', (err) => {
+			// 		throw new Error(err)
+			// 	})
+			// 	.save(savePath)
+			// 	.run()
+			// await supabase.storage
+			// 	.from('videos')
+			// 	.upload(`uploaded/${id}.mp4`, savePath, {
+			// 		contentType: 'video/mp4',
+			// 		duplex: 'half'
+			// 	})
+			return response.json({ id })
+		} catch (err: any) {
+			console.error(err)
+			return response.status(500).json({ error: 'Error uploading video.' })
+		}
 	}
 ]
