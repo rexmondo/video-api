@@ -192,7 +192,7 @@ export const get: Handler = async (request, response) => {
 				response.setHeader(key, value)
 			}
 			response.attachment(`${id}.mp4`)
-			return response.sendFile(path)
+			return response.sendFile(path, () => fs.rm(path))
 		}
 
 		// again, keeping merged as a separate block here in case we want to
@@ -203,7 +203,7 @@ export const get: Handler = async (request, response) => {
 				response.setHeader(key, value)
 			}
 			response.attachment(`${id}.mp4`)
-			return response.sendFile(path)
+			return response.sendFile(path, () => fs.rm(path))
 		}
 	} catch (error) {
 		console.error(error)

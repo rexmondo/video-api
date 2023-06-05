@@ -51,7 +51,9 @@ export async function concatVideos(
 		instructionPath,
 		`file '${inputPath1}'\nfile '${inputPath2}'`
 	)
-	await ffmpeg(`-f concat -safe 0 -i ${instructionPath} -c copy ${outputPath}`)
+	await ffmpeg(
+		`-f concat -safe 0 -i ${instructionPath} -vcodec copy -acodec copy ${outputPath}`
+	)
 	fs.rm(instructionPath)
 	return
 }

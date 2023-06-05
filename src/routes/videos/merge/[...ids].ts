@@ -164,8 +164,6 @@ export const get: Handler = async (request, response) => {
 		const mergedPath = `${tmpDir}/${id1}-${id2}-merged.mp4`
 		await concatVideos(truncated1Path, truncated2Path, mergedPath)
 
-		return response.status(200).json({ id: mergedPath })
-
 		const overlayPath = `${tmpDir}/${id1}-${id2}-overlay.mp4`
 		await overlayVideo(mergedPath, overlayPath)
 
