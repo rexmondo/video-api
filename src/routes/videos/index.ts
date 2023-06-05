@@ -62,8 +62,6 @@ export const post: Handler[] = [
 	// parse multipart/form-data into a file field in the request
 	multer({ dest: tmpDir }).single('video'),
 	async (request, response) => {
-
-		console.log('got here', request.file)
 		// make an id for the file
 		const id = uuidv4()
 
@@ -79,13 +77,10 @@ export const post: Handler[] = [
 			})
 		}
 		// reject for invalid mimetypes
-		if (!request.file.mimetype.includes('video/')) {
-			return response.status(400).json({ error: 'Not a video file.' })
-		}
-		console.log(id)
-		return
+		// if (!request.file.mimetype.includes('video/')) {
+		// 	return response.status(400).json({ error: 'Not a video file.' })
+		// }
 		try {
-			const savePath = `${request.file.path}-processed`
 			// await ffmpeg(request.file.path)
 			// 	.videoCodec('libx24')
 			// 	.format('mp4')
@@ -94,12 +89,12 @@ export const post: Handler[] = [
 			// 	})
 			// 	.save(savePath)
 			// 	.run()
-			// await supabase.storage
-			// 	.from('videos')
-			// 	.upload(`uploaded/${id}.mp4`, savePath, {
-			// 		contentType: 'video/mp4',
-			// 		duplex: 'half'
-			// 	})
+			await supabase.storage
+				.from('videos')
+				.upload(`uploaded/${id}`, request.file.path, {
+					contentType: 'image/png',
+					duplex: 'half'
+				})
 			return response.json({ id })
 		} catch (err: any) {
 			console.error(err)
