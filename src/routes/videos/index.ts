@@ -2,6 +2,7 @@ import { Handler } from 'express'
 import { v4 as uuidv4 } from 'uuid'
 import ffmpeg from 'fluent-ffmpeg'
 import * as os from 'node:os'
+import * as fs from 'node:fs'
 import multer from 'multer'
 
 import supabase from '../../lib/supabase'
@@ -91,7 +92,7 @@ export const post: Handler[] = [
 			// 	.run()
 			await supabase.storage
 				.from('videos')
-				.upload(`uploaded/${id}`, request.file.path, {
+				.upload(`uploaded/${id}`, fs.createReadStream(request.file.path), {
 					contentType: 'image/png',
 					duplex: 'half'
 				})

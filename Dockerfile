@@ -3,9 +3,10 @@ ARG VARIANT="18"
 FROM mcr.microsoft.com/vscode/devcontainers/typescript-node:0-${VARIANT}
 
 # [Optional] Uncomment this section to install additional OS packages.
-RUN apt update
-RUN apt install -y ffmpeg
-RUN apt install -y libx264-dev
+RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
+    && apt-get -y install --no-install-recommends \
+    libx264-dev \
+    ffmpeg
 
 EXPOSE 4000
 
